@@ -32,3 +32,12 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Agent working directories
+.omo/
+.opencode/
+.claude/
+.agents/
+
+# Source image (already copied into mipmap)
+/IMG_*.png
