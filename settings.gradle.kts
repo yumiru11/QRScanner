@@ -1,9 +1,11 @@
 pluginManagement {
     repositories {
-        // 阿里云镜像源（优先）
-        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
-        maven { url = uri("https://maven.aliyun.com/repository/public") }
-        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        // 本地构建用阿里云镜像加速，CI 环境自动跳过（GitHub Actions 会设置 CI=true）
+        if (System.getenv("CI") != "true") {
+            maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+            maven { url = uri("https://maven.aliyun.com/repository/public") }
+            maven { url = uri("https://maven.aliyun.com/repository/google") }
+        }
 
         // 官方源（镜像兜底）
         google {
@@ -20,9 +22,10 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        // 阿里云镜像源（优先）
-        maven { url = uri("https://maven.aliyun.com/repository/public") }
-        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        if (System.getenv("CI") != "true") {
+            maven { url = uri("https://maven.aliyun.com/repository/public") }
+            maven { url = uri("https://maven.aliyun.com/repository/google") }
+        }
 
         // 官方源（镜像兜底）
         google()
