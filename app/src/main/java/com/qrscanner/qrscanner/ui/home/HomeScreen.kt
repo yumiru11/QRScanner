@@ -3,6 +3,7 @@ package com.qrscanner.qrscanner.ui.home
 import android.Manifest
 import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -73,6 +74,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.qrscanner.qrscanner.data.ScanHistoryEntity
+import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import com.qrscanner.qrscanner.ui.dialog.ScanResultDialog
 import com.qrscanner.qrscanner.ui.scanner.CameraPreview
 import com.qrscanner.qrscanner.viewmodel.AppState
@@ -130,6 +132,12 @@ fun HomeScreen(
 
     var showIntroDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showLicenses by remember { mutableStateOf(false) }
+
+    // Handle back press when in licenses screen
+    BackHandler(enabled = showLicenses) {
+        showLicenses = false
+    }
 
     // Always track visibility for scan result dialog animation
     val showResultDialog = scanResult is ScanResultState.Success
@@ -257,6 +265,16 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextButton(onClick = {
+                        showIntroDialog = false
+                        showLicenses = true
+                    }) {
+                        Text(
+                            text = "开源许可",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             },
             confirmButton = {
@@ -286,6 +304,10 @@ fun HomeScreen(
                 }
             }
         )
+    }
+
+    if (showLicenses) {
+        LibrariesContainer(modifier = Modifier.fillMaxSize())
     }
 }
 

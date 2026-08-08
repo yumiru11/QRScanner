@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
+    id("com.mikepenz.aboutlibraries.plugin")
 }
 
 android {
@@ -14,8 +15,8 @@ android {
         applicationId = "com.qrscanner.qrscanner"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.0.1"
         ndk {
             abiFilters += "arm64-v8a"
         }
@@ -88,6 +89,9 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
+
+    // AboutLibraries - Open Source Licenses Display
+    implementation("com.mikepenz:aboutlibraries-compose-m3:11.2.3")
 
     // Core
     implementation("androidx.core:core-ktx:1.13.1")

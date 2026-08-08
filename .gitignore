@@ -38,6 +38,10 @@ google-services.json
 .opencode/
 .claude/
 .agents/
+.codebuddy/
 
 # Source image (already copied into mipmap)
 /IMG_*.png
+
+# kotlin language server
+kls_database.db
