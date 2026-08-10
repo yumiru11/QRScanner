@@ -15,7 +15,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.launch
 
 sealed class AppState {
@@ -37,8 +41,30 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
     private val _scanResult = MutableStateFlow<ScanResultState>(ScanResultState.None)
     val scanResult: StateFlow<ScanResultState> = _scanResult.asStateFlow()
 
-    val scanHistory: StateFlow<List<ScanHistoryEntity>> = dao.getAllHistory()
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val scanHistory: StateFlow<List<ScanHistoryEntity>> = _searchQuery
+        .debounce(300)
+        .flatMapLatest { keyword ->
+            if (keyword.isEmpty()) {
+                dao.getAllHistory()
+            } else {
+                dao.searchHistory(escapeLikeKeyword(keyword))
+            }
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query.trim()
+    }
+
+    /** Escapes LIKE wildcards so user input is matched literally. */
+    private fun escapeLikeKeyword(keyword: String): String = keyword
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
 
     // Selection mode
     private val _isSelectionMode = MutableStateFlow(false)

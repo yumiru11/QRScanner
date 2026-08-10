@@ -10,6 +10,12 @@ interface ScanHistoryDao {
     @Query("SELECT * FROM scan_history ORDER BY timestamp DESC")
     fun getAllHistory(): Flow<List<ScanHistoryEntity>>
 
+    @Query(
+        "SELECT * FROM scan_history WHERE content LIKE '%' || :query || '%' ESCAPE '\\' " +
+            "ORDER BY timestamp DESC"
+    )
+    fun searchHistory(query: String): Flow<List<ScanHistoryEntity>>
+
     @Insert
     suspend fun insert(history: ScanHistoryEntity)
 
