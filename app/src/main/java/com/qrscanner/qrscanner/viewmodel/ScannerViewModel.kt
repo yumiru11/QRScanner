@@ -47,19 +47,24 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
     @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     val scanHistory: StateFlow<List<ScanHistoryEntity>> = _searchQuery
         .debounce(300)
-        .flatMapLatest { query ->
-            val keyword = query.trim()
+        .flatMapLatest { keyword ->
             if (keyword.isEmpty()) {
                 dao.getAllHistory()
             } else {
-                dao.searchHistory(keyword)
+                dao.searchHistory(escapeLikeKeyword(keyword))
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun setSearchQuery(query: String) {
-        _searchQuery.value = query
+        _searchQuery.value = query.trim()
     }
+
+    /** Escapes LIKE wildcards so user input is matched literally. */
+    private fun escapeLikeKeyword(keyword: String): String = keyword
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
 
     // Selection mode
     private val _isSelectionMode = MutableStateFlow(false)
