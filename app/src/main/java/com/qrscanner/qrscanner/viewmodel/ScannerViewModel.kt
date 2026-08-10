@@ -167,6 +167,12 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
     }
 
     private fun isValidUrl(text: String): Boolean {
-        return text.startsWith("http://") || text.startsWith("https://")
+        return isValidUrlString(text)
+    }
+
+    companion object {
+        internal fun isValidUrlString(text: String): Boolean {
+            return text.startsWith("http://") || text.startsWith("https://")
+        }
     }
 }
