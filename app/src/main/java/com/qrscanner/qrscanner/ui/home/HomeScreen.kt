@@ -36,8 +36,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,6 +50,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
@@ -92,6 +95,7 @@ fun HomeScreen(
     val appState by viewModel.appState.collectAsStateWithLifecycle()
     val scanResult by viewModel.scanResult.collectAsStateWithLifecycle()
     val history by viewModel.scanHistory.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val isSelectionMode by viewModel.isSelectionMode.collectAsStateWithLifecycle()
     val selectedIds by viewModel.selectedIds.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -170,9 +174,11 @@ fun HomeScreen(
             is AppState.Home -> {
                 HomeContent(
                     history = history,
+                    searchQuery = searchQuery,
                     isSelectionMode = isSelectionMode,
                     selectedIds = selectedIds,
                     snackbarHostState = snackbarHostState,
+                    onSearchQueryChange = { viewModel.setSearchQuery(it) },
                     onScanClick = {
                         if (hasPermission) {
                             viewModel.startScanning()
@@ -315,9 +321,11 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     history: List<ScanHistoryEntity>,
+    searchQuery: String,
     isSelectionMode: Boolean,
     selectedIds: Set<Long>,
     snackbarHostState: SnackbarHostState,
+    onSearchQueryChange: (String) -> Unit,
     onScanClick: () -> Unit,
     onTitleClick: () -> Unit,
     onItemClick: (ScanHistoryEntity) -> Unit,
@@ -473,52 +481,97 @@ private fun HomeContent(
             }
         }
     ) { padding ->
-        if (history.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(32.dp)
-                ) {
-                    Text(
-                        text = "暂无扫描记录",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "点击右下角的扫描按钮开始扫描二维码",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline,
-                        textAlign = TextAlign.Center
-                    )
-                }
+        val isSearchActive = searchQuery.isNotBlank()
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            if (!isSelectionMode && (isSearchActive || history.isNotEmpty())) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = {
+                        Text(
+                            text = "搜索扫描记录",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = "搜索",
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { onSearchQueryChange("") }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "清除搜索",
+                                    tint = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 8.dp,
-                    bottom = 88.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(history, key = { it.id }) { item ->
-                    HistoryItem(
-                        item = item,
-                        isSelectionMode = isSelectionMode,
-                        isSelected = selectedIds.contains(item.id),
-                        onClick = { onItemClick(item) },
-                        onLongClick = { onItemLongClick(item) }
-                    )
+
+            if (history.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(32.dp)
+                    ) {
+                        Text(
+                            text = if (isSearchActive) "未找到匹配结果" else "暂无扫描记录",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (isSearchActive)
+                                "请尝试其他关键词"
+                            else
+                                "点击右下角的扫描按钮开始扫描二维码",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 8.dp,
+                        bottom = 88.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(history, key = { it.id }) { item ->
+                        HistoryItem(
+                            item = item,
+                            isSelectionMode = isSelectionMode,
+                            isSelected = selectedIds.contains(item.id),
+                            onClick = { onItemClick(item) },
+                            onLongClick = { onItemLongClick(item) }
+                        )
+                    }
                 }
             }
         }
